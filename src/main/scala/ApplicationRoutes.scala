@@ -9,15 +9,20 @@ class ApplicationRoutes(inMemoryStorage: InMemoryStorage) {
       concat(
         get {
           complete(inMemoryStorage.data.mkString("\n"))
-        },
-        post {
-          entity(as[String]) { data =>
-            onSuccess(inMemoryStorage.store(data)) { _ =>
-              complete(StatusCodes.OK)
+        })
+
+      path("internal") {
+          concat {
+            post {
+              entity(as[String]) { data =>
+                onSuccess(inMemoryStorage.store(data)) { _ =>
+                  complete(StatusCodes.OK)
+                }
+              }
             }
           }
-        }
-      )
+      }
     }
+
 
 }

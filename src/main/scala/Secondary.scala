@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.ExecutionContextExecutor
 
-object Master extends App with LazyLogging {
+object Secondary extends App with LazyLogging {
 
   val rootBehavior = Behaviors.setup[Nothing] { context =>
 
