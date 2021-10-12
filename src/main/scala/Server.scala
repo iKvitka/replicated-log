@@ -7,7 +7,12 @@ class Server(applicationRoutes: ApplicationRoutes) {
 
   def start(port: Int)(implicit system: ActorSystem[_]): Unit = {
     import system.executionContext
-    val futureBinding = Http().newServerAt("localhost", port).bind(applicationRoutes.routes)
+
+    lazy val config = com.typesafe.config.ConfigFactory.load()
+    val bindAddress = config.getString("application.bindAddress")
+    val bindPort = config.getInt("application.bindPort")
+
+    val futureBinding = Http().newServerAt(bindAddress, bindPort).bind(applicationRoutes.routes)
     futureBinding.onComplete {
       case Success(binding) =>
         val address = binding.localAddress
