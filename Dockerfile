@@ -6,5 +6,4 @@ COPY ./ ./
 #  # Build it.
 RUN sbt compile
 
-EXPOSE 1337
 CMD sbt run
