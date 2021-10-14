@@ -6,7 +6,7 @@ class PublicRoutes(inMemoryStorage: InMemoryStorage) {
   val route: Route = path("data") {
     concat(
       get {
-        complete(inMemoryStorage.data.mkString("\n"))
+        complete(inMemoryStorage.showData)
       },
       post {
         entity(as[String]) { data =>
