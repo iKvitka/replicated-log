@@ -10,9 +10,8 @@ class PublicRoutes(inMemoryStorage: InMemoryStorage) {
       },
       post {
         entity(as[String]) { data =>
-          onSuccess(inMemoryStorage.store(data)) { _ =>
-            complete(StatusCodes.OK)
-          }
+          inMemoryStorage.store(data)
+          complete(StatusCodes.OK)
         }
       }
     )
