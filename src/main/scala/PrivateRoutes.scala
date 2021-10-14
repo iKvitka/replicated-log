@@ -3,19 +3,21 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 
 class PrivateRoutes(inMemoryStorage: InMemoryStorage) {
-  val route: Route = pathPrefix("secondary") {
+  val route: Route = path("secondary") {
     concat(
-      path("add") {
-        post {
-          entity(as[String]) { data =>
-            inMemoryStorage.addSecondary(data)
-            complete(StatusCodes.OK)
-          }
+      post {
+        entity(as[String]) { data =>
+          inMemoryStorage.addSecondary(data)
+          complete(StatusCodes.OK)
         }
       },
-      path("show") {
-        get {
-          complete(inMemoryStorage.secondaries.mkString("\n"))
+      get {
+        complete(inMemoryStorage.secondaries.mkString("\n"))
+      },
+      delete {
+        entity(as[String]) { secondary =>
+          inMemoryStorage.removeSecondary(secondary)
+          complete(StatusCodes.OK)
         }
       }
     )
