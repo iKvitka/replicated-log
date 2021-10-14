@@ -11,8 +11,10 @@ object Secondary extends App with LazyLogging {
     implicit val actorSystem: ActorSystem[Nothing] = context.system
     implicit val executionContext: ExecutionContextExecutor = context.system.executionContext
 
-    val inMemoryStorage = new InMemoryStorage
-    val applicationRoutes = new ApplicationRoutes(inMemoryStorage)
+    val inMemoryStorage   = new InMemoryStorage
+    val privateRoutes     = new PrivateRoutes(inMemoryStorage)
+    val publicRoutes      = new PublicRoutes(inMemoryStorage)
+    val applicationRoutes = new ApplicationRoutes(privateRoutes, publicRoutes)
 
     new Server(applicationRoutes).start(1337)
     Behaviors.empty

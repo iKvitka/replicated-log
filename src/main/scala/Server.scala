@@ -4,7 +4,6 @@ import akka.http.scaladsl.Http
 import scala.util.{Failure, Success}
 
 class Server(applicationRoutes: ApplicationRoutes) {
-
   def start(port: Int)(implicit system: ActorSystem[_]): Unit = {
     import system.executionContext
     val futureBinding = Http().newServerAt("localhost", port).bind(applicationRoutes.routes)
