@@ -4,11 +4,11 @@ import akka.http.scaladsl.Http
 import scala.util.{Failure, Success}
 
 class Server(applicationRoutes: ApplicationRoutes) {
-  def start(port: Int)(implicit system: ActorSystem[_]): Unit = {
+  def start(implicit system: ActorSystem[_]): Unit = {
     import system.executionContext
     lazy val config = com.typesafe.config.ConfigFactory.load()
     val bindAddress = config.getString("application.bindAddress")
-    val bindPort = config.getInt("application.bindPort")
+    val bindPort    = config.getInt("application.bindPort")
 
     val futureBinding = Http().newServerAt(bindAddress, bindPort).bind(applicationRoutes.routes)
 

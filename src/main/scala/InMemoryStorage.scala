@@ -1,16 +1,22 @@
 import akka.actor.typed.ActorSystem
-import scala.collection.mutable
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import com.typesafe.scalalogging.LazyLogging
+import play.api.libs.json.Json
 
-class InMemoryStorage(implicit actorSystem: ActorSystem[_], executionContext: ExecutionContextExecutor) {
+import scala.collection.mutable
+import scala.concurrent.ExecutionContextExecutor
+
+class InMemoryStorage(implicit actorSystem: ActorSystem[_], executionContext: ExecutionContextExecutor) extends LazyLogging {
   val data: mutable.SortedMap[Int, String] = mutable.SortedMap.empty
   var counter: Int                         = 0
 
+  def store(message: String): Unit = {
+    val jsonData = Json.parse(message)
+    val id       = (jsonData \ "id").as[Int]
+    val newData  = (jsonData \ "data").as[String]
 
-  def store(newData: String): Future[mutable.SortedMap[Int, String]] =
-     Future {
-               data += counter -> newData
-               counter += 1
-               data
-             }
+    data += id -> newData
+    logger.info("json is {} id is {} and data is {}", message, id, newData)
+  }
+
+  def showData: String = data.values.mkString("\n")
 }
