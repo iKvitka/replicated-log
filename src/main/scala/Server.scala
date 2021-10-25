@@ -5,7 +5,7 @@ import scala.util.{Failure, Success}
 
 class Server(applicationRoutes: ApplicationRoutes) {
 
-  def start(port: Int)(implicit system: ActorSystem[_]): Unit = {
+  def start(implicit system: ActorSystem[_]): Unit = {
     import system.executionContext
 
     lazy val config = com.typesafe.config.ConfigFactory.load()

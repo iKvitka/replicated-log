@@ -3,45 +3,49 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import com.typesafe.scalalogging.LazyLogging
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.util.{Failure, Success}
 
 class InMemoryStorage(implicit actorSystem: ActorSystem[_], executionContext: ExecutionContextExecutor) extends LazyLogging {
-  val secondaries: mutable.Set[String] = mutable.Set.empty
+  val secondaries: mutable.Set[Secondaries] = mutable.Set.empty
 
   val data: mutable.SortedMap[Int, String] = mutable.SortedMap.empty
-  var counter: Int                         = 0
+  var counter: AtomicInteger               = new AtomicInteger(0)
 
-  def addSecondary(address: String): mutable.Set[String] =
-    secondaries += address
-  //TODO: add sending data to new secondary
+  def addSecondary(address: String): mutable.Set[Secondaries] =
+    if (secondaries.count(_.location == address) == 0) secondaries += Secondaries(address, 0)
+    else secondaries
 
-  def removeSecondary(address: String): mutable.Set[String] =
-    secondaries -= address
+  def removeSecondary(address: String): mutable.Set[Secondaries] =
+    secondaries.filterNot(_.location == address)
 
-  def store(newData: String): Future[StatusCode] = {
-    def createRequestToSecondary(address: String): Future[HttpResponse] =
+  def store(message: LogReplicate): HttpResponse = {
+
+    def createRequestToSecondary(secondary: Secondaries): Future[HttpResponse] =
       Http().singleRequest(
         HttpRequest(
           method = HttpMethods.POST,
-          uri = Uri(s"http://$address/private/store"),
-          entity = HttpEntity(ContentTypes.`application/json`, s"""{"id": $counter, "data": "$newData"}""")
+          uri = Uri(s"http://${secondary.location}/private/store"),
+          entity = HttpEntity(ContentTypes.`application/json`, s"""{"id": $counter, "data": "${message.data}"}""")
         ))
 
-    val storeToSecondaries = Future.sequence(secondaries.map(createRequestToSecondary))
+    val response: mutable.Set[Future[HttpResponse]] = secondaries.map(createRequestToSecondary)
+    val s                                           = new AtomicInteger(0)
+    val f                                           = new AtomicInteger(0)
+    response.foreach(_.onComplete {
+      case Success(_) => s.incrementAndGet()
+      case Failure(_) => f.incrementAndGet()
+    })
 
-    storeToSecondaries.map { requests =>
-      if (requests.forall(_.status == StatusCodes.OK)) {
-        data += counter -> newData
-        counter += 1
-        logger.info("Requests to secondaries succeeded")
-        StatusCodes.OK
-      } else {
-        logger.warn("at least one of secondaries failed to save message")
-        StatusCodes.InternalServerError
-      }
+    while (s.get() < message.writeConcern && secondaries.size - f.get() >= message.writeConcern) {
+      Thread.sleep(50)
     }
+    data += counter.getAndIncrement() -> message.data
 
+    if (s.get() >= message.writeConcern) HttpResponse(StatusCodes.OK)
+    else HttpResponse(StatusCodes.InternalServerError, entity = "Could not replicate data to Secondaries")
   }
 
   def showData: String = data.values.mkString("\n")
