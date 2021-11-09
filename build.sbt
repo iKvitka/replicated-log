@@ -16,7 +16,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka"          %% "akka-http"           % AkkaHttpVersion,
   "com.typesafe.scala-logging" %% "scala-logging"       % ScalaLogging,
   "com.typesafe.akka"          %% "akka-slf4j"          % AkkaVersion,
-  "ch.qos.logback"             % "logback-classic"      % logback,
+  "ch.qos.logback"             % "logback-classic"      % logback % Runtime,
   "org.codehaus.janino"        % "janino"               % janino,
   "de.heikoseeberger"          %% "akka-http-play-json" % akkaPlayJson
 )
