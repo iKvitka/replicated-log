@@ -22,13 +22,19 @@ class InMemoryStorage(implicit actorSystem: ActorSystem[_], executionContext: Ex
     secondaries.filterNot(_.location == address)
 
   def store(message: LogReplicate): HttpResponse = {
+    val id = counter.getAndIncrement()
+    data += id -> message.data
 
+    tryToReplicate(id, message.writeConcern, message.data)
+  }
+
+  private def tryToReplicate(id: Int, writeConcern:Int, message: String) = {
     def createRequestToSecondary(secondary: Secondaries): Future[HttpResponse] =
       Http().singleRequest(
         HttpRequest(
           method = HttpMethods.POST,
           uri = Uri(s"http://${secondary.location}/private/store"),
-          entity = HttpEntity(ContentTypes.`application/json`, s"""{"id": $counter, "data": "${message.data}"}""")
+          entity = HttpEntity(ContentTypes.`application/json`, s"""{"id": $id, "data": "$message"}""")
         ))
 
     val response: mutable.Set[Future[HttpResponse]] = secondaries.map(createRequestToSecondary)
@@ -39,12 +45,11 @@ class InMemoryStorage(implicit actorSystem: ActorSystem[_], executionContext: Ex
       case Failure(_) => f.incrementAndGet()
     })
 
-    while (s.get() < message.writeConcern && secondaries.size - f.get() >= message.writeConcern) {
+    while (s.get() < writeConcern && secondaries.size - f.get() >= writeConcern) {
       Thread.sleep(50)
     }
-    data += counter.getAndIncrement() -> message.data
 
-    if (s.get() >= message.writeConcern) HttpResponse(StatusCodes.OK)
+    if (s.get() >= writeConcern) HttpResponse(StatusCodes.OK)
     else HttpResponse(StatusCodes.InternalServerError, entity = "Could not replicate data to Secondaries")
   }
 
