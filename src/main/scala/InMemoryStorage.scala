@@ -18,5 +18,5 @@ class InMemoryStorage(implicit actorSystem: ActorSystem[_], executionContext: Ex
     logger.info("json is {} id is {} and data is {}", message, id, newData)
   }
 
-  def showData: String = data.values.mkString("\n")
+  def showData: String = data.zipWithIndex.takeWhile(d => d._1._1 == d._2).map(_._1._2).mkString("\n")
 }
