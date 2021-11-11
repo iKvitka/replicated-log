@@ -13,6 +13,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka"          %% "akka-actor-typed"    % AkkaVersion,
   "com.typesafe.akka"          %% "akka-stream"         % AkkaVersion,
   "com.typesafe.akka"          %% "akka-stream"         % AkkaVersion,
+  "com.typesafe.akka"          %% "akka-cluster-typed"  % AkkaVersion,
   "com.typesafe.akka"          %% "akka-http"           % AkkaHttpVersion,
   "com.typesafe.scala-logging" %% "scala-logging"       % ScalaLogging,
   "com.typesafe.akka"          %% "akka-slf4j"          % AkkaVersion,

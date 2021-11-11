@@ -10,7 +10,7 @@ class Server(applicationRoutes: ApplicationRoutes) {
 
     lazy val config = com.typesafe.config.ConfigFactory.load()
     val bindAddress = config.getString("application.bindAddress")
-    val bindPort = config.getInt("application.bindPort")
+    val bindPort    = config.getInt("application.bindPort")
 
     val futureBinding = Http().newServerAt(bindAddress, bindPort).bind(applicationRoutes.routes)
     futureBinding.onComplete {

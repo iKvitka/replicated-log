@@ -1,3 +1,4 @@
+import akka.actor.Scheduler
 import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
@@ -5,10 +6,12 @@ import com.typesafe.scalalogging.LazyLogging
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
 
-class InMemoryStorage(implicit actorSystem: ActorSystem[_], executionContext: ExecutionContextExecutor) extends LazyLogging {
+class InMemoryStorage(implicit actorSystem: ActorSystem[_], executionContext: ExecutionContextExecutor, scheduler: Scheduler)
+    extends LazyLogging {
   val secondaries: mutable.Set[Secondaries] = mutable.Set.empty
 
   val data: mutable.SortedMap[Int, String] = mutable.SortedMap.empty
@@ -25,17 +28,22 @@ class InMemoryStorage(implicit actorSystem: ActorSystem[_], executionContext: Ex
     val id = counter.getAndIncrement()
     data += id -> message.data
 
-    tryToReplicate(id, message.writeConcern, message.data)
+    tryToReplicate(id, message.writeConcern - 1, message.data)
   }
 
-  private def tryToReplicate(id: Int, writeConcern:Int, message: String) = {
+  private def tryToReplicate(id: Int, writeConcern: Int, message: String) = {
     def createRequestToSecondary(secondary: Secondaries): Future[HttpResponse] =
-      Http().singleRequest(
+      akka.pattern.retry(attempt = () => Http().singleRequest(
         HttpRequest(
           method = HttpMethods.POST,
           uri = Uri(s"http://${secondary.location}/private/store"),
           entity = HttpEntity(ContentTypes.`application/json`, s"""{"id": $id, "data": "$message"}""")
-        ))
+        )),
+        attempts = 31337,
+        minBackoff = 1.second,
+        maxBackoff = 64.second,
+        randomFactor = 0.2
+      )
 
     val response: mutable.Set[Future[HttpResponse]] = secondaries.map(createRequestToSecondary)
     val s                                           = new AtomicInteger(0)
