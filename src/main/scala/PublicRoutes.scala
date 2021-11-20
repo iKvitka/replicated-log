@@ -1,6 +1,6 @@
-import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
 class PublicRoutes(inMemoryStorage: InMemoryStorage) {
   val route: Route = path("data") {
@@ -9,9 +9,8 @@ class PublicRoutes(inMemoryStorage: InMemoryStorage) {
         complete(inMemoryStorage.showData)
       },
       post {
-        entity(as[String]) { data =>
-          inMemoryStorage.store(data)
-          complete(StatusCodes.OK)
+        entity(as[LogReplicate]) { data =>
+          complete(inMemoryStorage.store(data))
         }
       }
     )

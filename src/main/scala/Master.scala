@@ -15,7 +15,7 @@ object Master extends App with LazyLogging {
     val publicRoutes      = new PublicRoutes(inMemoryStorage)
     val applicationRoutes = new ApplicationRoutes(privateRoutes, publicRoutes)
 
-    new Server(applicationRoutes).start(1337)
+    new Server(applicationRoutes).start
     Behaviors.empty
   }
 
