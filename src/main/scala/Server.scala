@@ -9,6 +9,7 @@ class Server(applicationRoutes: ApplicationRoutes) {
     import system.executionContext
 
     lazy val config = com.typesafe.config.ConfigFactory.load()
+
     val bindAddress = config.getString("application.bindAddress")
     val bindPort = config.getInt("application.bindPort")
 

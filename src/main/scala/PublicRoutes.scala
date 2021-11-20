@@ -2,7 +2,11 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-class PublicRoutes(inMemoryStorage: InMemoryStorage) {
+trait PublicRoutes {
+  val route: Route
+}
+
+class MasterPublicRoutes(inMemoryStorage: InMemoryStorageMaster) extends PublicRoutes {
   val route: Route = path("data") {
     concat(
       get {
@@ -14,5 +18,13 @@ class PublicRoutes(inMemoryStorage: InMemoryStorage) {
         }
       }
     )
+  }
+}
+
+class SecondaryPublicRoutes(inMemoryStorage: InMemoryStorageSecondary) extends PublicRoutes {
+  val route: Route = path("data") {
+    get {
+      complete(inMemoryStorage.showData)
+    }
   }
 }

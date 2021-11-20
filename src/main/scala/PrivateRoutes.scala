@@ -2,7 +2,11 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 
-class PrivateRoutes(inMemoryStorage: InMemoryStorage) {
+trait PrivateRoutes {
+  val route: Route
+}
+
+class MasterPrivateRoutes(inMemoryStorage: InMemoryStorageMaster) extends PrivateRoutes {
   val route: Route = path("secondary") {
     concat(
       post {
@@ -23,4 +27,26 @@ class PrivateRoutes(inMemoryStorage: InMemoryStorage) {
     )
 
   }
+}
+
+class SecondaryPrivateRoutes(inMemoryStorage: InMemoryStorageSecondary) extends PrivateRoutes {
+  val route: Route =
+    concat (
+      path("store") {
+        post {
+          entity(as[String]) { data =>
+            inMemoryStorage.store(data)
+            complete(StatusCodes.OK)
+          }
+        }
+      },
+      path("delay"){
+        post{
+          entity(as[String]){delay =>
+            inMemoryStorage.setDelay(delay.toIntOption.getOrElse(0))
+            complete(StatusCodes.OK)
+          }
+        }
+      }
+    )
 }

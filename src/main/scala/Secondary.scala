@@ -4,15 +4,16 @@ import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.ExecutionContextExecutor
 
-object Master extends App with LazyLogging {
+object Secondary extends App with LazyLogging {
 
   val rootBehavior = Behaviors.setup[Nothing] { context =>
-    implicit val actorSystem: ActorSystem[Nothing]          = context.system
+
+    implicit val actorSystem: ActorSystem[Nothing] = context.system
     implicit val executionContext: ExecutionContextExecutor = context.system.executionContext
 
-    val inMemoryStorage   = new InMemoryStorageMaster
-    val privateRoutes     = new MasterPrivateRoutes(inMemoryStorage)
-    val publicRoutes      = new MasterPublicRoutes(inMemoryStorage)
+    val inMemoryStorage = new InMemoryStorageSecondary
+    val privateRoutes = new SecondaryPrivateRoutes(inMemoryStorage)
+    val publicRoutes = new SecondaryPublicRoutes(inMemoryStorage)
     val applicationRoutes = new ApplicationRoutes(privateRoutes, publicRoutes)
 
     new Server(applicationRoutes).start
