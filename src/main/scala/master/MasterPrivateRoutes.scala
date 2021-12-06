@@ -15,7 +15,7 @@ class MasterPrivateRoutes(replicator: Replicator) extends PrivateRoutes {
         }
       },
       get {
-        complete(replicator.secondaries.mkString("\n"))
+        complete(replicator.showSecondaries.mkString("\n"))
       },
       delete {
         entity(as[String]) { secondary =>

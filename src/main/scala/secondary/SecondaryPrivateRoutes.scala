@@ -23,6 +23,11 @@ class SecondaryPrivateRoutes(inMemoryStorage: InMemoryStorage)extends PrivateRou
             complete(StatusCodes.OK)
           }
         }
+      },
+      path("heartbeat"){
+        get{
+          complete(StatusCodes.OK)
+        }
       }
     )
 }
