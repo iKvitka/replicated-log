@@ -1,8 +1,11 @@
+package master
+
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import common.PublicRoutes
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
 
-class PublicRoutes(inMemoryStorage: InMemoryStorage) {
+class MasterPublicRoutes(inMemoryStorage: InMemoryStorage) extends PublicRoutes{
   val route: Route = path("data") {
     concat(
       get {
