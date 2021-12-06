@@ -1,3 +1,5 @@
+package common
+
 import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.Http
 
@@ -17,7 +19,7 @@ class Server(applicationRoutes: ApplicationRoutes) {
     futureBinding.onComplete {
       case Success(binding) =>
         val address = binding.localAddress
-        system.log.info("Server online at http://{}:{}/", address.getHostString, address.getPort)
+        system.log.info("common.Server online at http://{}:{}/", address.getHostString, address.getPort)
       case Failure(ex) =>
         system.log.error("Failed to bind HTTP endpoint, terminating system", ex)
         system.terminate()

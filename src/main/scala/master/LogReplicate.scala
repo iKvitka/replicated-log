@@ -1,3 +1,5 @@
+package master
+
 import play.api.libs.json.{Format, Json}
 
 case class LogReplicate(data: String, writeConcern: Int)
