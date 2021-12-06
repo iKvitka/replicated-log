@@ -10,13 +10,14 @@ import scala.concurrent.ExecutionContextExecutor
 object Master extends App with LazyLogging {
 
   val rootBehavior = Behaviors.setup[Nothing] { context =>
-    implicit val actorSystem: ActorSystem[Nothing] = context.system
+    implicit val actorSystem: ActorSystem[Nothing]          = context.system
     implicit val executionContext: ExecutionContextExecutor = context.system.executionContext
 
-    val inMemoryStorage = new InMemoryStorage
-    val privateRoutes = new MasterPrivateRoutes(inMemoryStorage)
-    val publicRoutes = new MasterPublicRoutes(inMemoryStorage)
-     val applicationRoutes = new ApplicationRoutes(privateRoutes, publicRoutes)
+    val replicator        = new Replicator
+    val inMemoryStorage   = new InMemoryStorage(replicator)
+    val privateRoutes     = new MasterPrivateRoutes(replicator)
+    val publicRoutes      = new MasterPublicRoutes(inMemoryStorage)
+    val applicationRoutes = new ApplicationRoutes(privateRoutes, publicRoutes)
 
     new Server(applicationRoutes).start
     Behaviors.empty
