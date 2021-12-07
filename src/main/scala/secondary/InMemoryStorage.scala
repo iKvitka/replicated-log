@@ -1,15 +1,11 @@
 package secondary
 
 import akka.actor.typed.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model._
 import com.typesafe.scalalogging.LazyLogging
 import play.api.libs.json.Json
 
-import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContextExecutor, Future}
-import scala.util.{Failure, Success}
+import scala.concurrent.ExecutionContextExecutor
 
 class InMemoryStorage(implicit actorSystem: ActorSystem[_], executionContext: ExecutionContextExecutor) extends LazyLogging {
   val data: mutable.SortedMap[Int, String] = mutable.SortedMap.empty
