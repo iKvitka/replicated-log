@@ -3,14 +3,14 @@ package master
 import akka.actor.Scheduler
 import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest, HttpResponse, StatusCodes, Uri}
+import akka.http.scaladsl.model._
 import common.CountDownLatch
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
-import scala.util.{Failure, Success}
+import scala.util.Success
 
 class Replicator(implicit actorSystem: ActorSystem[_], executionContext: ExecutionContextExecutor, scheduler: Scheduler) {
   val secondaries: mutable.Map[String, PhiAccrualFailureDetector] = mutable.Map.empty
@@ -34,7 +34,7 @@ class Replicator(implicit actorSystem: ActorSystem[_], executionContext: Executi
             .singleRequest(
               HttpRequest(
                 method = HttpMethods.GET,
-                uri = Uri(s"http://${heartbeat._1}/private/heartbeat")
+                uri = Uri(s"http://${heartbeat._1}/private/health")
               ))
             .onComplete {
               case Success(_) => heartbeat._2.heartbeat()
@@ -64,23 +64,22 @@ class Replicator(implicit actorSystem: ActorSystem[_], executionContext: Executi
         randomFactor = 0.2
       )
 
-    val consumersStarted = new CountDownLatch(writeConcern)
+    val consumersStarted  = new CountDownLatch(writeConcern)
     val mainThreadProceed = new CountDownLatch(1)
     val consumersFinished = new CountDownLatch(writeConcern)
-    val s                                        = new AtomicInteger(0)
-
+    val s                 = new AtomicInteger(0)
 
     val response: Iterable[Future[HttpResponse]] = secondaries.keys.map(createRequestToSecondary)
 
-
-    response.map{ request =>
-      for{
+    response.map { request =>
+      for {
         _ <- request
         _ = consumersStarted.countDown()
         _ <- mainThreadProceed.await(Duration.Inf)
       } yield {
         s.incrementAndGet()
-        consumersFinished.countDown()}
+        consumersFinished.countDown()
+      }
     }
 
     val await = for {
