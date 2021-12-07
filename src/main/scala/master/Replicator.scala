@@ -48,48 +48,30 @@ class Replicator(implicit actorSystem: ActorSystem[_], executionContext: Executi
   def checkQuorum: Boolean =
     secondaries.count(secondaries => heartbeatStatus(secondaries._2.phi) == "Healthy") + 1 > secondaries.size / 2
 
-  def tryToReplicate(id: Int, writeConcern: Int, message: String): HttpResponse = {
-    def createRequestToSecondary(secondary: String): Future[HttpResponse] =
-      akka.pattern.retry(
-        attempt = () =>
-          Http().singleRequest(
-            HttpRequest(
+  def tryToReplicate(id: Int, writeConcern: Int, message: String):Unit= {
+    def createRequestToSecondary(secondary: String, consumersStarted: CountDownLatch): Unit =
+      akka.pattern
+        .retry(
+          attempt = () =>
+            Http().singleRequest(HttpRequest(
               method = HttpMethods.POST,
               uri = Uri(s"http://${secondary}/private/store"),
               entity = HttpEntity(ContentTypes.`application/json`, s"""{"id": $id, "data": "$message"}""")
             )),
-        attempts = 31337,
-        minBackoff = 1.second,
-        maxBackoff = 64.second,
-        randomFactor = 0.2
-      )
+          attempts = 31337,
+          minBackoff = 1.second,
+          maxBackoff = 64.second,
+          randomFactor = 0.2
+        )
+        .onComplete {
+          case Success(_) => consumersStarted.countDown()
+          case _          => ()
+        }
 
-    val consumersStarted  = new CountDownLatch(writeConcern)
-    val mainThreadProceed = new CountDownLatch(1)
-    val consumersFinished = new CountDownLatch(writeConcern)
-    val s                 = new AtomicInteger(0)
+    val counter = new CountDownLatch(writeConcern)
 
-    val response: Iterable[Future[HttpResponse]] = secondaries.keys.map(createRequestToSecondary)
+    secondaries.keys.foreach(s => createRequestToSecondary(s, counter))
 
-    response.map { request =>
-      for {
-        _ <- request
-        _ = consumersStarted.countDown()
-        _ <- mainThreadProceed.await(Duration.Inf)
-      } yield {
-        s.incrementAndGet()
-        consumersFinished.countDown()
-      }
-    }
-
-    val await = for {
-      _ <- consumersStarted.await(Duration.Inf)
-      _ = mainThreadProceed.countDown()
-      _ <- consumersFinished.await(100000.millis)
-    } yield ()
-    Await.result(await, Duration.Inf)
-
-    if (s.get() >= writeConcern) HttpResponse(StatusCodes.OK)
-    else HttpResponse(StatusCodes.InternalServerError, entity = "Could not replicate data to Secondaries")
+    Await.result(counter.await(Duration.Inf), Duration.Inf)
   }
 }

@@ -24,6 +24,7 @@ class InMemoryStorage(replicator: Replicator)(implicit actorSystem: ActorSystem[
       data += id -> message.data
 
       replicator.tryToReplicate(id, message.writeConcern-1, message.data)
+      HttpResponse(StatusCodes.OK, entity = "your data was successfully stored")
     }
     else HttpResponse(StatusCodes.InternalServerError, entity = "There are no quorum cluster in read only mode")
 
