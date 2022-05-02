@@ -1,0 +1,16 @@
+version: '3'
+services:
+  master:
+    image: replicated-log-master
+    ports:
+      - "1337:1337"
+
+  secondary1:
+    image: replicated-log-secondary
+    ports:
+      - "1339:1337"
+
+  secondary2:
+    image: replicated-log-secondary
+    ports:
+      - "1340:1337"
